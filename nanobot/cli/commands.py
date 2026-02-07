@@ -188,11 +188,12 @@ def gateway(
         console.print("[red]Error: No API key configured.[/red]")
         console.print("Set one in ~/.nanobot/config.json under providers.openrouter.apiKey")
         raise typer.Exit(1)
-    
+    provider_str = model.split("/")[0]
     provider = LiteLLMProvider(
         api_key=api_key,
         api_base=api_base,
-        default_model=config.agents.defaults.model
+        default_model=config.agents.defaults.model,
+        provider=provider_str,
     )
     
     # Create cron service first (callback set after agent creation)
@@ -308,7 +309,8 @@ def agent(
     provider = LiteLLMProvider(
         api_key=api_key,
         api_base=api_base,
-        default_model=config.agents.defaults.model
+        default_model=config.agents.defaults.model,
+        provider=model.split("/")[0],
     )
     
     agent_loop = AgentLoop(

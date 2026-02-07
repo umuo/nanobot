@@ -177,6 +177,9 @@ class Config(BaseSettings):
             return self.providers.zhipu.api_base
         if "vllm" in model:
             return self.providers.vllm.api_base
+        provider_str = model.split("/")[0]
+        if hasattr(self.providers, provider_str):
+            return getattr(self.providers, provider_str).api_base
         return None
     
     class Config:

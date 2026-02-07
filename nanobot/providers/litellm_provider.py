@@ -21,11 +21,12 @@ class LiteLLMProvider(LLMProvider):
         self, 
         api_key: str | None = None, 
         api_base: str | None = None,
-        default_model: str = "anthropic/claude-opus-4-5"
+        default_model: str = "anthropic/claude-opus-4-5",
+        provider: str = "openai"
     ):
         super().__init__(api_key, api_base)
         self.default_model = default_model
-        
+        self.provider = provider
         # Detect OpenRouter by api_key prefix or explicit api_base
         self.is_openrouter = (
             (api_key and api_key.startswith("sk-or-")) or
@@ -33,37 +34,39 @@ class LiteLLMProvider(LLMProvider):
         )
         
         # Track if using custom endpoint (vLLM, etc.)
-        self.is_vllm = bool(api_base) and not self.is_openrouter
+        # TODO 判断是不是 vllm
+        self.is_vllm = False and not self.is_openrouter
         
         # Configure LiteLLM based on provider
         if api_key:
+            litellm.api_key = api_key
             if self.is_openrouter:
                 # OpenRouter mode - set key
                 os.environ["OPENROUTER_API_KEY"] = api_key
             elif self.is_vllm:
                 # vLLM/custom endpoint - uses OpenAI-compatible API
                 os.environ["HOSTED_VLLM_API_KEY"] = api_key
-            elif "deepseek" in default_model:
+            elif "deepseek" == self.provider:
                 os.environ.setdefault("DEEPSEEK_API_KEY", api_key)
-            elif "anthropic" in default_model:
+            elif "anthropic" == self.provider:
                 os.environ.setdefault("ANTHROPIC_API_KEY", api_key)
-            elif "openai" in default_model or "gpt" in default_model:
+            elif self.provider in ("openai", "gpt"):
                 os.environ.setdefault("OPENAI_API_KEY", api_key)
-            elif "gemini" in default_model.lower():
+            elif "gemini" == self.provider:
                 os.environ.setdefault("GEMINI_API_KEY", api_key)
-            elif "zhipu" in default_model or "glm" in default_model or "zai" in default_model:
+            elif self.provider in ("zhipu", "glm", "zai"):
                 os.environ.setdefault("ZAI_API_KEY", api_key)
-            elif "dashscope" in default_model or "qwen" in default_model.lower():
+            elif self.provider in ("dashscope", "qwen"):
                 os.environ.setdefault("DASHSCOPE_API_KEY", api_key)
-            elif "groq" in default_model:
+            elif "groq" == self.provider:
                 os.environ.setdefault("GROQ_API_KEY", api_key)
-            elif "moonshot" in default_model or "kimi" in default_model:
+            elif self.provider in ("moonshot", "kimi"):
                 os.environ.setdefault("MOONSHOT_API_KEY", api_key)
                 os.environ.setdefault("MOONSHOT_API_BASE", api_base or "https://api.moonshot.cn/v1")
         
         if api_base:
             litellm.api_base = api_base
-        
+
         # Disable LiteLLM logging noise
         litellm.suppress_debug_info = True
     
